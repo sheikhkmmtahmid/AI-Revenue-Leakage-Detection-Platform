@@ -1,0 +1,52 @@
+{
+  "model_name": "isolation_forest_v1",
+  "threshold_used": 0.5,
+  "optimal_threshold": 0.3945073886979795,
+  "youden_j": 0.2954027892791501,
+  "n_samples": 7500,
+  "n_positive": 4928,
+  "leakage_rate_pct": 65.70666666666666,
+  "roc_auc": 0.6282,
+  "pr_auc": 0.7598,
+  "accuracy": 0.4468,
+  "precision": 0.8468,
+  "recall": 0.193,
+  "f1_score": 0.3143,
+  "confusion_matrix": [
+    [
+      2400,
+      172
+    ],
+    [
+      3977,
+      951
+    ]
+  ],
+  "classification_report": {
+    "0": {
+      "precision": 0.37635251685745646,
+      "recall": 0.9331259720062208,
+      "f1-score": 0.5363727790814616,
+      "support": 2572.0
+    },
+    "1": {
+      "precision": 0.8468388245770259,
+      "recall": 0.1929788961038961,
+      "f1-score": 0.3143282102131879,
+      "support": 4928.0
+    },
+    "accuracy": 0.4468,
+    "macro avg": {
+      "precision": 0.6115956707172412,
+      "recall": 0.5630524340550584,
+      "f1-score": 0.4253504946473248,
+      "support": 7500.0
+    },
+    "weighted avg": {
+      "precision": 0.6854933867830616,
+      "recall": 0.4468,
+      "f1-score": 0.3904746943637479,
+      "support": 7500.0
+    }
+  }
+}

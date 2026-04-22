@@ -1,0 +1,37 @@
+[
+  {
+    "metric": "revenue",
+    "model": "prophet",
+    "model_version": "v1",
+    "training_months": 35,
+    "forecast_horizon_months": 6,
+    "anomaly_threshold_pct": 15.0,
+    "anomalous_months": [
+      "2024-08",
+      "2024-09",
+      "2024-11"
+    ],
+    "backtest_mae": 132735.4147227804,
+    "backtest_mape": 0.035755639816510434,
+    "cv_rmse_mean": 1070580.0350536252,
+    "cv_mape_mean": 0.4205309846332659
+  },
+  {
+    "metric": "collections",
+    "model": "prophet",
+    "model_version": "v1",
+    "training_months": 35,
+    "forecast_horizon_months": 6,
+    "anomaly_threshold_pct": 15.0,
+    "anomalous_months": [
+      "2024-08",
+      "2024-09",
+      "2024-10",
+      "2024-11"
+    ],
+    "backtest_mae": 188040.675870651,
+    "backtest_mape": 0.08372294590974101,
+    "cv_rmse_mean": 2463724.3173618983,
+    "cv_mape_mean": 0.829541652512654
+  }
+]

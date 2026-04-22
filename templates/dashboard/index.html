@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Revenue Leakage Detection Platform</title>
+  <!-- Favicon: shield with $ magnifying glass -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 36'><path d='M16 1L30 7V18C30 27 16 35 16 35 16 35 2 27 2 18V7Z' fill='%238B0000' stroke='%23D4A017' stroke-width='1.5'/><circle cx='15' cy='18' r='6' fill='none' stroke='%23D4A017' stroke-width='2'/><line x1='19.5' y1='22.5' x2='25' y2='28' stroke='%23D4A017' stroke-width='2' stroke-linecap='round'/><text x='15' y='22' text-anchor='middle' fill='%23FFD700' font-size='8' font-weight='bold' font-family='Georgia'>%24</text></svg>">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <style>
+    /* ── Gryffindor Palette ─────────────────────────────────── */
+    :root {
+      --scarlet:      #AE0001;
+      --scarlet-dark: #740001;
+      --scarlet-deep: #2D0000;
+      --gold:         #D4A017;
+      --gold-light:   #F0C040;
+      --gold-pale:    #FDF3CC;
+      --surface:      #ffffff;
+      --bg:           #F6F1E9;
+      --border:       #E5D9C8;
+      --text:         #1C0A00;
+      --muted:        #7A5C44;
+      --success:      #16a34a;
+      --danger:       #dc2626;
+      --info:         #0369a1;
+    }
+
+    * { box-sizing: border-box; }
+    body { background: var(--bg); font-family: 'Segoe UI', system-ui, sans-serif; color: var(--text); margin: 0; }
+
+    /* ── Topbar ─────────────────────────────────────────────── */
+    .topbar {
+      background: linear-gradient(135deg, #1A0000 0%, #5C0A00 60%, #3D0600 100%);
+      color: #fff;
+      padding: 0 28px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 12px rgba(0,0,0,.35);
+    }
+    .topbar .brand { display:flex; align-items:center; gap:12px; }
+    .topbar .brand-text { font-size:.98rem; font-weight:700; letter-spacing:.01em; color:#fff; }
+    .topbar .brand-sub  { font-size:.68rem; color: #D4A017; letter-spacing:.08em; text-transform:uppercase; }
+    .topbar .ts { font-size:.75rem; color:#c9a27090; }
+
+    /* ── Layout ─────────────────────────────────────────────── */
+    .page { padding: 24px 28px; }
+    .section-label {
+      font-size:.67rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
+      color: var(--scarlet-dark); margin-bottom:14px;
+    }
+
+    /* ── Cards ──────────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 1px 6px rgba(45,0,0,.07);
+      transition: box-shadow .18s, border-color .18s;
+    }
+
+    /* ── KPI cards ──────────────────────────────────────────── */
+    .kpi-card {
+      padding: 20px 22px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      cursor: pointer;
+      border-radius: 14px;
+      transition: box-shadow .18s, border-color .18s, transform .12s;
+    }
+    .kpi-card:hover {
+      box-shadow: 0 4px 18px rgba(174,0,1,.18);
+      border-color: var(--gold);
+      transform: translateY(-1px);
+    }
+    .kpi-card:hover .kpi-click-hint { opacity: 1; }
+    .kpi-icon { width:50px; height:50px; border-radius:13px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0; }
+    .kpi-val  { font-size:1.55rem; font-weight:700; line-height:1.1; color:var(--text); }
+    .kpi-lbl  { font-size:.76rem; color:var(--muted); margin-top:3px; }
+    .kpi-click-hint {
+      font-size:.65rem; color: var(--gold); font-weight:600; letter-spacing:.06em;
+      text-transform:uppercase; margin-top:4px; opacity:0; transition:opacity .18s;
+    }
+
+    /* ── Severity badges ─────────────────────────────────────── */
+    .sev { display:inline-block; padding:2px 9px; border-radius:20px; font-size:.7rem; font-weight:600; text-transform:uppercase; letter-spacing:.04em; }
+    .sev-critical { background:#fee2e2; color:#991b1b; }
+    .sev-high     { background:#ffedd5; color:#9a3412; }
+    .sev-medium   { background:var(--gold-pale); color:#78350f; }
+    .sev-low      { background:#dcfce7; color:#166534; }
+
+    /* ── Tables ─────────────────────────────────────────────── */
+    .tbl { width:100%; border-collapse:collapse; font-size:.82rem; }
+    .tbl th {
+      background: #FAF4EC;
+      font-weight:700; font-size:.68rem; text-transform:uppercase; letter-spacing:.07em;
+      color: var(--scarlet-dark); padding:10px 14px; border-bottom:2px solid var(--gold);
+      white-space:nowrap;
+    }
+    .tbl td { padding:9px 14px; border-bottom:1px solid #F0E8DC; vertical-align:middle; }
+    .tbl tbody tr:last-child td { border-bottom:none; }
+
+    /* Clickable rows */
+    .tbl-clickable tbody tr { cursor:pointer; transition:background .12s; }
+    .tbl-clickable tbody tr:hover { background:#FDF7EE; }
+
+    /* ── Col info icon ──────────────────────────────────────── */
+    .col-info { display:inline-flex; align-items:center; gap:4px; }
+    .col-info .bi-info-circle { font-size:.72rem; color:var(--gold); cursor:help; }
+
+    /* ── Prob bar ────────────────────────────────────────────── */
+    .prob-bar  { display:flex; align-items:center; gap:8px; }
+    .prob-track{ flex:1; height:6px; background:#F0E8DC; border-radius:3px; min-width:60px; }
+    .prob-fill { height:6px; border-radius:3px; background:linear-gradient(90deg,#D4A017,#AE0001); }
+    .prob-num  { font-weight:600; font-size:.8rem; color:var(--text); white-space:nowrap; }
+
+    /* ── Deviation ───────────────────────────────────────────── */
+    .dev-pos { color:#dc2626; font-weight:600; }
+    .dev-neg { color:#16a34a; font-weight:600; }
+
+    /* ── Segment pill ────────────────────────────────────────── */
+    .seg { display:inline-block; padding:2px 8px; border-radius:20px; font-size:.68rem; font-weight:600; }
+    .seg-enterprise { background:#ede9fe; color:#5b21b6; }
+    .seg-mid_market { background:#e0f2fe; color:#0369a1; }
+    .seg-smb        { background:#dcfce7; color:#166534; }
+    .seg-startup    { background:#fff7ed; color:#c2410c; }
+
+    /* ── Loading ─────────────────────────────────────────────── */
+    #loader { position:fixed; inset:0; background:rgba(246,241,233,.95); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; }
+    .spinner { width:44px; height:44px; border:4px solid var(--border); border-top-color:var(--scarlet); border-radius:50%; animation:spin .7s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* ── Modal shared ────────────────────────────────────────── */
+    .modal-gryf .modal-header {
+      background: linear-gradient(135deg, #1A0000, #5C0A00);
+      color:#fff; border-radius:12px 12px 0 0;
+    }
+    .modal-gryf .modal-header .btn-close { filter:invert(1) brightness(.8); }
+    .modal-gryf .modal-title { font-size:1rem; font-weight:700; }
+    .modal-subtitle { font-size:.75rem; color:#D4A017; margin-top:2px; }
+
+    /* ── Modal detail sections ───────────────────────────────── */
+    .detail-section { margin-bottom:1.4rem; }
+    .detail-section-title {
+      font-size:.67rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+      color:var(--scarlet-dark); border-bottom:2px solid var(--gold); padding-bottom:6px; margin-bottom:10px;
+    }
+    .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px 20px; }
+    .detail-kv .dk { font-size:.72rem; color:var(--muted); }
+    .detail-kv .dv { font-size:.9rem; font-weight:600; }
+    .feat-tag { display:inline-block; background:#FAF4EC; color:var(--scarlet-dark); border:1px solid #E5D9C8; border-radius:6px; padding:3px 9px; font-size:.72rem; margin:2px; font-family:monospace; }
+    .model-score { display:flex; align-items:center; gap:12px; padding:8px 12px; background:#FAF4EC; border-radius:8px; margin-bottom:6px; border-left:3px solid var(--gold); }
+    .model-score .ms-label { font-size:.75rem; color:var(--muted); flex:1; }
+    .model-score .ms-val { font-size:.9rem; font-weight:700; }
+    .alert-row { display:flex; align-items:flex-start; gap:10px; padding:9px 0; border-bottom:1px solid #F0E8DC; }
+    .alert-row:last-child { border-bottom:none; }
+
+    /* ── KPI modal summary box ───────────────────────────────── */
+    .kpi-summary-box {
+      background: linear-gradient(135deg, #FAF4EC, #FDF7EE);
+      border: 1px solid var(--gold);
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 16px;
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .kpi-summary-box .ks { text-align:center; }
+    .kpi-summary-box .ks-val { font-size:1.2rem; font-weight:700; color:var(--scarlet); }
+    .kpi-summary-box .ks-lbl { font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+
+    /* ── Rate bar ────────────────────────────────────────────── */
+    .rate-bar { display:flex; align-items:center; gap:6px; }
+    .rate-track { flex:1; height:5px; background:#F0E8DC; border-radius:3px; min-width:50px; }
+    .rate-fill { height:5px; border-radius:3px; background:linear-gradient(90deg,#16a34a,#D4A017); }
+  </style>
+</head>
+<body>
+
+<div id="loader">
+  <svg width="52" height="60" viewBox="0 0 40 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M20 1.5L38.5 8.5V23C38.5 34.5 20 44.5 20 44.5C20 44.5 1.5 34.5 1.5 23V8.5Z" fill="#8B0000" stroke="#D4A017" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M20 5L35 11V23C35 32 20 41 20 41C20 41 5 32 5 23V11Z" fill="#AE0001"/>
+    <circle cx="19" cy="21" r="7.5" fill="none" stroke="#D4A017" stroke-width="2.2"/>
+    <line x1="24.5" y1="26.5" x2="31" y2="33" stroke="#D4A017" stroke-width="2.5" stroke-linecap="round"/>
+    <text x="19" y="25" text-anchor="middle" font-size="9" font-weight="bold" fill="#FFD700" font-family="Georgia, serif">$</text>
+  </svg>
+  <div class="spinner"></div>
+  <span style="color:var(--muted);font-size:.85rem;font-weight:500;">Loading platform data…</span>
+</div>
+
+<!-- ── Topbar ──────────────────────────────────────────────────────────── -->
+<div class="topbar">
+  <div class="brand">
+    <!-- Logo SVG -->
+    <svg width="38" height="44" viewBox="0 0 40 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20 1.5L38.5 8.5V23C38.5 34.5 20 44.5 20 44.5C20 44.5 1.5 34.5 1.5 23V8.5Z" fill="#8B0000" stroke="#D4A017" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M20 5L35 11V23C35 32 20 41 20 41C20 41 5 32 5 23V11Z" fill="#AE0001"/>
+      <circle cx="19" cy="21" r="7.5" fill="none" stroke="#D4A017" stroke-width="2.2"/>
+      <line x1="24.5" y1="26.5" x2="31" y2="33" stroke="#D4A017" stroke-width="2.5" stroke-linecap="round"/>
+      <text x="19" y="25" text-anchor="middle" font-size="9" font-weight="bold" fill="#FFD700" font-family="Georgia, serif">$</text>
+    </svg>
+    <div>
+      <div class="brand-text">AI Revenue Leakage Detection Platform</div>
+      <div class="brand-sub">Powered by ML · Rule Engine · Forecasting</div>
+    </div>
+  </div>
+  <span class="ts" id="ts"></span>
+</div>
+
+<div class="page">
+
+  <!-- ── KPI Row ──────────────────────────────────────────────────────── -->
+  <div class="section-label">Revenue Overview</div>
+  <div class="row g-3 mb-4" id="kpiRow"></div>
+
+  <!-- ── Charts Row ───────────────────────────────────────────────────── -->
+  <div class="row g-3 mb-4">
+    <div class="col-xl-8">
+      <div class="card p-4">
+        <div class="section-label">Revenue vs Forecast — Monthly (Actual · Forecast · 90% CI)</div>
+        <canvas id="revenueChart" style="max-height:300px;"></canvas>
+      </div>
+    </div>
+    <div class="col-xl-4">
+      <div class="card p-4" style="min-height:360px;">
+        <div class="section-label">Risk Severity Distribution</div>
+        <div style="max-width:220px;margin:0 auto;">
+          <canvas id="riskDonut"></canvas>
+        </div>
+        <div id="riskLegend" class="mt-3 d-flex flex-wrap gap-2 justify-content-center"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tables Row ───────────────────────────────────────────────────── -->
+  <div class="row g-3">
+    <div class="col-xl-7">
+      <div class="card p-4">
+        <div class="section-label">Top 15 High-Risk Invoices
+          <span style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0;font-size:.72rem;margin-left:8px;">— click any row for full analysis</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="tbl tbl-clickable">
+            <thead>
+              <tr>
+                <th><span class="col-info">Invoice <i class="bi bi-info-circle" data-bs-toggle="tooltip" title="Unique invoice identifier assigned to each billing record."></i></span></th>
+                <th><span class="col-info">Customer <i class="bi bi-info-circle" data-bs-toggle="tooltip" title="The company or individual receiving this invoice."></i></span></th>
+                <th><span class="col-info">Seg <i class="bi bi-info-circle" data-bs-toggle="tooltip" title="Customer segment: Enterprise, Mid-Market, SMB, or Startup."></i></span></th>
+                <th><span class="col-info">Amount <i class="bi bi-info-circle" data-bs-toggle="tooltip" title="Total invoice value billed before payments."></i></span></th>
+                <th><span class="col-info">Leakage Prob <i class="bi bi-info-circle" data-bs-toggle="tooltip" title="XGBoost + LR ensemble probability (0–100%) of revenue leakage. Higher = more risk."></i></span></th>
+                <th><span class="col-info">Severity <i class="bi bi-info-circle" data-bs-toggle="tooltip" title="Risk tier: Critical ≥80% · High ≥60% · Medium ≥40% · Low <40%"></i></span></th>
+                <th><span class="col-info">Top Signal <i class="bi bi-info-circle" data-bs-toggle="tooltip" title="The single most influential feature driving the leakage prediction (e.g. high discount_ratio = unusually large discount applied)."></i></span></th>
+              </tr>
+            </thead>
+            <tbody id="riskTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-5">
+      <div class="card p-4">
+        <div class="section-label">Forecast Anomalies Detected</div>
+        <table class="tbl">
+          <thead><tr><th>Month</th><th>Actual</th><th>Forecast</th><th>Deviation</th></tr></thead>
+          <tbody id="anomTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── KPI Detail Modal ──────────────────────────────────────────────────── -->
+<div class="modal fade modal-gryf" id="kpiModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content" style="border-radius:12px;">
+      <div class="modal-header">
+        <div>
+          <h5 class="modal-title" id="kpiModalTitle">Detail</h5>
+          <div class="modal-subtitle" id="kpiModalSubtitle"></div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="kpiModalBody" style="padding:24px;">
+        <div class="text-center py-4"><div class="spinner" style="margin:0 auto;"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Invoice Detail Modal ──────────────────────────────────────────────── -->
+<div class="modal fade modal-gryf" id="invoiceModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content" style="border-radius:12px;">
+      <div class="modal-header">
+        <div>
+          <h5 class="modal-title" id="invModalTitle">Invoice Detail</h5>
+          <div class="modal-subtitle" id="invModalSubtitle"></div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="invModalBody" style="padding:24px;">
+        <div class="text-center py-4"><div class="spinner" style="margin:0 auto;"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+// ── Formatters ────────────────────────────────────────────────────────────────
+const usd  = v => '$' + Number(v).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0});
+const usdM = v => '$' + (Math.abs(v)/1e6).toFixed(2) + 'M';
+const pct  = v => (v >= 0 ? '+' : '') + Number(v).toFixed(1) + '%';
+const featLabel = s => (s||'').replace(/_/g,' ');
+const sevColor = {critical:'#991b1b', high:'#9a3412', medium:'#78350f', low:'#166534'};
+
+// ── Bootstrap tooltips ────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el =>
+    new bootstrap.Tooltip(el, {trigger:'hover'})
+  );
+});
+
+// ── Spinner HTML ──────────────────────────────────────────────────────────────
+const spinnerHtml = '<div class="text-center py-5"><div class="spinner" style="margin:0 auto;"></div></div>';
+
+// ══════════════════════════════════════════════════════════════════════════════
+// KPI CARDS
+// ══════════════════════════════════════════════════════════════════════════════
+async function renderKPIs() {
+  const d = await fetch('/api/dashboard/kpis/').then(r => r.json());
+  const { revenue: rv, risk } = d;
+
+  const cards = [
+    {
+      key:'invoiced', v: usd(rv.total_invoiced), l:'Total Invoiced',
+      i:'bi-receipt-cutoff', bg:'#FDF4E0', fg:'#92400e',
+      sub: 'Monthly breakdown →',
+    },
+    {
+      key:'collected', v: usd(rv.total_collected), l:'Total Collected',
+      i:'bi-cash-stack', bg:'#F0FDF4', fg:'#15803d',
+      sub: 'vs invoiced →',
+    },
+    {
+      key:'outstanding', v: usd(rv.total_outstanding), l:'Outstanding',
+      i:'bi-hourglass-split', bg:'#FEF3C7', fg:'#b45309',
+      sub: 'Unpaid invoices →',
+    },
+    {
+      key:'collection-rate', v: rv.collection_rate_pct+'%', l:'Collection Rate',
+      i:'bi-percent', bg:'#E0F2FE', fg:'#0369a1',
+      sub: 'Monthly trend →',
+    },
+    {
+      key:'overdue', v: rv.overdue_invoices.toLocaleString(), l:'Overdue Invoices',
+      i:'bi-exclamation-triangle', bg:'#FEE2E2', fg:'#AE0001',
+      sub: 'View overdue list →',
+    },
+    {
+      key:'high-risk', v: risk.high_risk_invoices.toLocaleString(), l:'High-Risk Invoices',
+      i:'bi-shield-x', bg:'#FEE2E2', fg:'#AE0001',
+      sub: 'View high/critical →',
+    },
+    {
+      key:'anomalies', v: risk.anomalies_detected.toLocaleString(), l:'Anomalies Detected',
+      i:'bi-graph-down-arrow', bg:'#EDE9FE', fg:'#6d28d9',
+      sub: 'IF anomaly details →',
+    },
+    {
+      key:'duplicate-refunds', v: risk.duplicate_refunds.toLocaleString(), l:'Duplicate Refunds',
+      i:'bi-arrow-repeat', bg:'#FEF3C7', fg:'#b45309',
+      sub: 'All duplicates →',
+    },
+  ];
+
+  document.getElementById('kpiRow').innerHTML = cards.map(c => `
+    <div class="col-6 col-md-4 col-xl-3">
+      <div class="card kpi-card" data-kpi="${c.key}" onclick="openKpiModal('${c.key}')">
+        <div class="kpi-icon" style="background:${c.bg};color:${c.fg}">
+          <i class="bi ${c.i}"></i>
+        </div>
+        <div style="flex:1;">
+          <div class="kpi-val">${c.v}</div>
+          <div class="kpi-lbl">${c.l}</div>
+          <div class="kpi-click-hint">${c.sub}</div>
+        </div>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('ts').textContent = 'Updated ' + new Date().toLocaleTimeString();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// REVENUE CHART
+// ══════════════════════════════════════════════════════════════════════════════
+async function renderRevenueChart() {
+  const d = await fetch('/api/dashboard/revenue-trend/').then(r => r.json());
+
+  const actualMap = {}, forecastMap = {}, lowerMap = {}, upperMap = {};
+  (d.actuals||[]).forEach(a => { actualMap[a.month] = parseFloat(a.invoiced)||0; });
+  (d.forecasts||[]).forEach(f => {
+    const m = (f.period_month||'').slice(0,7);
+    forecastMap[m] = parseFloat(f.forecasted_value);
+    lowerMap[m]    = parseFloat(f.lower_bound);
+    upperMap[m]    = parseFloat(f.upper_bound);
+  });
+
+  const allMonths = [...new Set([...Object.keys(actualMap),...Object.keys(forecastMap)])].sort();
+  const actuals   = allMonths.map(m => actualMap[m]  !== undefined ? actualMap[m]  : null);
+  const yhat      = allMonths.map(m => forecastMap[m] !== undefined ? forecastMap[m]: null);
+  const lower     = allMonths.map(m => lowerMap[m]    !== undefined ? lowerMap[m]  : null);
+  const upper     = allMonths.map(m => upperMap[m]    !== undefined ? upperMap[m]  : null);
+
+  new Chart(document.getElementById('revenueChart'), {
+    data: {
+      labels: allMonths,
+      datasets: [
+        { type:'line', label:'Actual Revenue', data:actuals,
+          borderColor:'#AE0001', backgroundColor:'rgba(174,0,1,0.06)',
+          borderWidth:2.5, pointRadius:3, pointHoverRadius:5,
+          tension:0.3, fill:false, spanGaps:true, order:1 },
+        { type:'line', label:'Forecast', data:yhat,
+          borderColor:'#D4A017', borderWidth:2, borderDash:[5,4],
+          pointRadius:2, tension:0.3, fill:false, spanGaps:true, order:2 },
+        { type:'line', label:'Upper 90% CI', data:upper,
+          borderColor:'rgba(212,160,23,0.2)', backgroundColor:'rgba(212,160,23,0.1)',
+          borderWidth:0, pointRadius:0, fill:'+1', tension:0.3, spanGaps:true, order:3 },
+        { type:'line', label:'Lower 90% CI', data:lower,
+          borderColor:'rgba(212,160,23,0.2)', borderWidth:0,
+          pointRadius:0, fill:false, tension:0.3, spanGaps:true, order:4 },
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:true,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{ position:'bottom', labels:{ boxWidth:12, font:{size:11}, padding:16,
+          filter: item => !item.text.includes('Lower') }},
+        tooltip:{ callbacks:{ label: ctx => {
+          if(ctx.dataset.label.includes('Lower')) return null;
+          return ctx.parsed.y!==null ? `${ctx.dataset.label}: ${usd(ctx.parsed.y)}` : null;
+        }}}
+      },
+      scales:{
+        x:{ ticks:{font:{size:10},maxRotation:45,autoSkip:true,maxTicksLimit:18}, grid:{color:'#F0E8DC'} },
+        y:{ ticks:{callback:v=>usdM(v),font:{size:11}}, grid:{color:'#F0E8DC'}, beginAtZero:true }
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// RISK DONUT
+// ══════════════════════════════════════════════════════════════════════════════
+async function renderDonut() {
+  const d = await fetch('/api/dashboard/risk-distribution/').then(r => r.json());
+  const palette = {critical:'#AE0001',high:'#D4A017',medium:'#F0C040',low:'#22c55e'};
+  const order   = ['critical','high','medium','low'];
+  const sorted  = order.map(k=>d.find(x=>x.risk_severity===k)).filter(Boolean);
+
+  new Chart(document.getElementById('riskDonut'), {
+    type:'doughnut',
+    data:{ labels:sorted.map(x=>x.risk_severity),
+      datasets:[{ data:sorted.map(x=>x.count),
+        backgroundColor:sorted.map(x=>palette[x.risk_severity]),
+        borderWidth:2, borderColor:'#fff', hoverOffset:6 }]},
+    options:{ cutout:'65%', plugins:{
+      legend:{display:false},
+      tooltip:{callbacks:{label:c=>` ${c.label}: ${c.parsed.toLocaleString()}`}}}}
+  });
+
+  document.getElementById('riskLegend').innerHTML = sorted.map(x=>`
+    <span class="sev sev-${x.risk_severity}">
+      ${x.risk_severity.toUpperCase()} &nbsp;${x.count.toLocaleString()}
+    </span>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TOP RISKS TABLE (rows → invoice modal)
+// ══════════════════════════════════════════════════════════════════════════════
+async function renderTopRisks() {
+  const d = await fetch('/api/dashboard/top-risks/?limit=15').then(r=>r.json());
+  const tbody = document.getElementById('riskTbody');
+  tbody.innerHTML = d.map(r => {
+    const pp = (r.leakage_probability*100).toFixed(1);
+    const seg = r.customer_segment||'';
+    return `<tr data-invoice-id="${r.invoice_id}">
+      <td style="font-family:monospace;font-size:.75rem;">${r.invoice_number||'—'}</td>
+      <td style="font-weight:500;">${r.customer_name}</td>
+      <td><span class="seg seg-${seg}">${seg}</span></td>
+      <td>${r.invoice_amount?usd(r.invoice_amount):'—'}</td>
+      <td><div class="prob-bar">
+        <div class="prob-track"><div class="prob-fill" style="width:${pp}%"></div></div>
+        <span class="prob-num">${pp}%</span></div></td>
+      <td><span class="sev sev-${r.risk_severity}">${r.risk_severity}</span></td>
+      <td style="color:var(--muted);font-size:.78rem;">${featLabel(r.top_features[0]||'—')}</td>
+    </tr>`;
+  }).join('');
+  tbody.querySelectorAll('tr[data-invoice-id]').forEach(tr =>
+    tr.addEventListener('click', ()=>openInvoiceModal(tr.dataset.invoiceId))
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ANOMALY TABLE (forecast anomalies)
+// ══════════════════════════════════════════════════════════════════════════════
+async function renderAnomalies() {
+  const res = await fetch('/api/forecasts/?is_anomalous=true&metric=revenue').then(r=>r.json());
+  const rows = res.results||res;
+  document.getElementById('anomTbody').innerHTML = rows.length
+    ? rows.map(r => {
+        const dev = parseFloat(r.deviation_pct||0), cls = dev>0?'dev-pos':'dev-neg';
+        return `<tr>
+          <td style="font-weight:500;">${r.period_month}</td>
+          <td>${r.actual_value?usd(r.actual_value):'<span style="color:var(--muted)">Future</span>'}</td>
+          <td>${usd(r.forecasted_value)}</td>
+          <td class="${cls}">${r.deviation_pct!=null?pct(dev):'—'}</td>
+        </tr>`;}).join('')
+    : '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px">No anomalies detected</td></tr>';
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// KPI DETAIL MODAL
+// ══════════════════════════════════════════════════════════════════════════════
+const kpiModal = new bootstrap.Modal(document.getElementById('kpiModal'));
+
+function setKpiModal(title, subtitle, html) {
+  document.getElementById('kpiModalTitle').textContent   = title;
+  document.getElementById('kpiModalSubtitle').textContent = subtitle;
+  document.getElementById('kpiModalBody').innerHTML       = html;
+}
+
+async function openKpiModal(kpiKey) {
+  setKpiModal('Loading…','', spinnerHtml);
+  kpiModal.show();
+  try {
+    switch(kpiKey) {
+      case 'invoiced':     await renderKpiRevenue('invoiced');       break;
+      case 'collected':    await renderKpiRevenue('collected');      break;
+      case 'collection-rate': await renderKpiRevenue('rate');        break;
+      case 'outstanding':  await renderKpiOutstanding();             break;
+      case 'overdue':      await renderKpiOverdue();                 break;
+      case 'high-risk':    await renderKpiHighRisk();                break;
+      case 'anomalies':    await renderKpiAnomalies();               break;
+      case 'duplicate-refunds': await renderKpiDuplicateRefunds();   break;
+      default: setKpiModal('Unknown','','No detail available.');
+    }
+  } catch(e) {
+    console.error(e);
+    setKpiModal('Error','',`<div class="text-center py-4 text-danger">Failed to load data: ${e.message}</div>`);
+  }
+}
+
+// ── Revenue / Collected / Rate breakdown ─────────────────────────────────────
+async function renderKpiRevenue(mode) {
+  const rows = await fetch('/api/dashboard/kpi/revenue-breakdown/').then(r=>r.json());
+  const titles = {invoiced:'Monthly Invoiced Revenue', collected:'Monthly Collected Revenue', rate:'Collection Rate Trend'};
+  const totalInv  = rows.reduce((s,r)=>s+r.invoiced,0);
+  const totalColl = rows.reduce((s,r)=>s+r.collected,0);
+  const avgRate   = rows.reduce((s,r)=>s+r.collection_rate,0)/rows.length;
+
+  const summary = `<div class="kpi-summary-box">
+    <div class="ks"><div class="ks-val">${usd(totalInv)}</div><div class="ks-lbl">Total Invoiced</div></div>
+    <div class="ks"><div class="ks-val">${usd(totalColl)}</div><div class="ks-lbl">Total Collected</div></div>
+    <div class="ks"><div class="ks-val">${usd(totalInv-totalColl)}</div><div class="ks-lbl">Total Outstanding</div></div>
+    <div class="ks"><div class="ks-val">${avgRate.toFixed(1)}%</div><div class="ks-lbl">Avg Collection Rate</div></div>
+    <div class="ks"><div class="ks-val">${rows.length}</div><div class="ks-lbl">Months of Data</div></div>
+  </div>`;
+
+  const tableRows = rows.map(r => {
+    const rate = r.collection_rate;
+    const rateColor = rate >= 90 ? '#16a34a' : rate >= 75 ? '#D4A017' : '#AE0001';
+    const highlight = mode==='invoiced' ? r.invoiced : mode==='collected' ? r.collected : null;
+    return `<tr>
+      <td style="font-weight:600;">${r.month}</td>
+      <td>${r.invoice_count.toLocaleString()}</td>
+      <td style="${mode==='invoiced'?'color:var(--scarlet);font-weight:600':''}">${usd(r.invoiced)}</td>
+      <td style="${mode==='collected'?'color:#16a34a;font-weight:600':''}">${usd(r.collected)}</td>
+      <td style="color:var(--muted);font-size:.78rem;">${usd(r.outstanding)}</td>
+      <td>
+        <div class="rate-bar">
+          <div class="rate-track"><div class="rate-fill" style="width:${Math.min(rate,100)}%;background:${rateColor}"></div></div>
+          <span style="font-size:.78rem;font-weight:600;color:${rateColor};min-width:38px;">${rate}%</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  setKpiModal(titles[mode], `${rows.length} months · 2022–2024`,
+    summary + `<div style="overflow-x:auto"><table class="tbl">
+      <thead><tr><th>Month</th><th>Invoices</th><th>Invoiced</th><th>Collected</th><th>Outstanding</th><th>Collection Rate</th></tr></thead>
+      <tbody>${tableRows}</tbody>
+    </table></div>`);
+}
+
+// ── Outstanding invoices ──────────────────────────────────────────────────────
+async function renderKpiOutstanding() {
+  const d = await fetch('/api/dashboard/kpi/outstanding/?limit=100').then(r=>r.json());
+  const summary = `<div class="kpi-summary-box">
+    <div class="ks"><div class="ks-val" style="color:var(--scarlet)">${usd(d.total_outstanding)}</div><div class="ks-lbl">Total Outstanding</div></div>
+    <div class="ks"><div class="ks-val">${d.count}</div><div class="ks-lbl">Invoices shown</div></div>
+  </div>
+  <p style="font-size:.82rem;color:var(--muted);margin-bottom:14px;">All invoices with an unpaid balance, ordered by outstanding amount. These represent confirmed revenue gaps where payment has not been received.</p>`;
+
+  const rows = d.invoices.map(r=>`<tr>
+    <td style="font-family:monospace;font-size:.75rem;">${r.invoice_number}</td>
+    <td style="font-weight:500;">${r.customer_name}</td>
+    <td><span class="seg seg-${r.customer_segment}">${r.customer_segment}</span></td>
+    <td>${usd(r.total_amount)}</td>
+    <td style="color:var(--scarlet);font-weight:700;">${usd(r.outstanding_amount)}</td>
+    <td>${r.due_date}</td>
+    <td>${r.days_overdue>0?`<span style="color:#AE0001;font-weight:600">${r.days_overdue}d overdue</span>`:'<span style="color:#16a34a">on time</span>'}</td>
+    <td><span class="sev sev-${r.status==='overdue'?'critical':'medium'}">${r.status}</span></td>
+  </tr>`).join('');
+
+  setKpiModal('Outstanding Invoices', `Top ${d.count} by amount`,
+    summary + `<div style="overflow-x:auto"><table class="tbl">
+      <thead><tr><th>Invoice</th><th>Customer</th><th>Segment</th><th>Billed</th><th>Outstanding</th><th>Due Date</th><th>Age</th><th>Status</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`);
+}
+
+// ── Overdue invoices ──────────────────────────────────────────────────────────
+async function renderKpiOverdue() {
+  const d = await fetch('/api/dashboard/kpi/overdue/').then(r=>r.json());
+  const summary = `<div class="kpi-summary-box">
+    <div class="ks"><div class="ks-val" style="color:var(--scarlet)">${d.count.toLocaleString()}</div><div class="ks-lbl">Overdue Invoices</div></div>
+    <div class="ks"><div class="ks-val" style="color:var(--scarlet)">${usd(d.total_overdue_amount)}</div><div class="ks-lbl">Total At Risk</div></div>
+  </div>
+  <p style="font-size:.82rem;color:var(--muted);margin-bottom:14px;">Invoices with status <strong>overdue</strong> and a due date in the past. Sorted by days past due — the most delayed invoices represent the highest collection risk.</p>`;
+
+  const rows = d.invoices.map(r=>`<tr>
+    <td style="font-family:monospace;font-size:.75rem;">${r.invoice_number}</td>
+    <td style="font-weight:500;">${r.customer_name}</td>
+    <td><span class="seg seg-${r.segment}">${r.segment}</span></td>
+    <td>${usd(r.total_amount)}</td>
+    <td style="color:var(--scarlet);font-weight:700;">${usd(r.outstanding_amount)}</td>
+    <td>${r.due_date}</td>
+    <td><span style="font-weight:700;color:${r.days_overdue>90?'#991b1b':r.days_overdue>30?'#AE0001':'#D4A017'}">${r.days_overdue} days</span></td>
+  </tr>`).join('');
+
+  setKpiModal('Overdue Invoices', `${d.count} invoices · ${usd(d.total_overdue_amount)} at risk`,
+    summary + `<div style="overflow-x:auto"><table class="tbl">
+      <thead><tr><th>Invoice</th><th>Customer</th><th>Segment</th><th>Billed</th><th>Outstanding</th><th>Due Date</th><th>Days Overdue</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`);
+}
+
+// ── High-risk invoices ────────────────────────────────────────────────────────
+async function renderKpiHighRisk() {
+  const d = await fetch('/api/dashboard/kpi/high-risk/?limit=100').then(r=>r.json());
+  const totalHR = d.invoices.length;
+  const distHtml = d.distribution.map(x=>`
+    <span class="sev sev-${x.risk_severity}" style="font-size:.78rem;padding:3px 12px;">
+      ${x.risk_severity.toUpperCase()} &nbsp;<strong>${x.count.toLocaleString()}</strong>
+    </span>`).join(' ');
+
+  const summary = `<div class="kpi-summary-box">
+    <div style="flex:1">${distHtml}</div>
+  </div>
+  <p style="font-size:.82rem;color:var(--muted);margin-bottom:14px;">Invoices scoring <strong>Critical (≥80%)</strong> or <strong>High (≥60%)</strong> leakage probability by the XGBoost ensemble model. These warrant immediate investigation. Click any invoice in the main table for a full ML breakdown.</p>`;
+
+  const rows = d.invoices.map(r=>{
+    const pp = (r.leakage_probability*100).toFixed(1);
+    return `<tr>
+      <td style="font-family:monospace;font-size:.75rem;">${r.invoice_number||'—'}</td>
+      <td style="font-weight:500;">${r.customer_name}</td>
+      <td><span class="seg seg-${r.customer_segment}">${r.customer_segment}</span></td>
+      <td>${r.invoice_amount?usd(r.invoice_amount):'—'}</td>
+      <td><div class="prob-bar">
+        <div class="prob-track"><div class="prob-fill" style="width:${pp}%"></div></div>
+        <span class="prob-num">${pp}%</span></div></td>
+      <td><span class="sev sev-${r.risk_severity}">${r.risk_severity}</span></td>
+      <td style="font-size:.78rem;color:var(--muted)">${r.top_features.map(featLabel).join(', ')||'—'}</td>
+    </tr>`;
+  }).join('');
+
+  setKpiModal('High-Risk Invoices', `Top ${totalHR} Critical & High severity`,
+    summary + `<div style="overflow-x:auto"><table class="tbl">
+      <thead><tr><th>Invoice</th><th>Customer</th><th>Segment</th><th>Amount</th><th>Leakage Prob</th><th>Severity</th><th>Key Signals</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`);
+}
+
+// ── Anomalies detail ──────────────────────────────────────────────────────────
+async function renderKpiAnomalies() {
+  const d = await fetch('/api/dashboard/kpi/anomalies/?limit=100').then(r=>r.json());
+  const summary = `<div class="kpi-summary-box">
+    <div class="ks"><div class="ks-val" style="color:#6d28d9">${d.total_anomalies.toLocaleString()}</div><div class="ks-lbl">Anomalies Detected</div></div>
+    <div class="ks"><div class="ks-val">${d.total_scored.toLocaleString()}</div><div class="ks-lbl">Total Scored</div></div>
+    <div class="ks"><div class="ks-val" style="color:#6d28d9">${d.anomaly_rate_pct}%</div><div class="ks-lbl">Anomaly Rate</div></div>
+  </div>
+  <p style="font-size:.82rem;color:var(--muted);margin-bottom:14px;">
+    <strong>How it works:</strong> The Isolation Forest model assigns each invoice an anomaly score — the more isolated a data point is from the rest, the more anomalous it is.
+    Invoices with <code>score &lt; threshold</code> are flagged. The <strong>IF Score</strong> (more negative = more anomalous) and <strong>Anomaly Proxy</strong> (0–1, higher = more anomalous) help rank severity.
+    These anomalies may not all be leakage — they are unusual billing patterns that warrant review.
+  </p>`;
+
+  const rows = d.anomalies.map(r=>{
+    const proxy = Math.round((r.if_prob_proxy||0)*100);
+    return `<tr>
+      <td style="font-family:monospace;font-size:.75rem;">${r.invoice_number||'—'}</td>
+      <td style="font-weight:500;">${r.customer_name||'—'}</td>
+      <td><span class="seg seg-${r.customer_segment}">${r.customer_segment||''}</span></td>
+      <td>${r.invoice_amount?usd(r.invoice_amount):'—'}</td>
+      <td style="font-family:monospace;font-size:.78rem;color:#6d28d9;font-weight:600;">${r.if_score.toFixed(4)}</td>
+      <td>
+        <div class="prob-bar">
+          <div class="prob-track"><div class="prob-fill" style="width:${proxy}%;background:linear-gradient(90deg,#7c3aed,#AE0001)"></div></div>
+          <span class="prob-num" style="color:#6d28d9">${proxy}%</span>
+        </div>
+      </td>
+      <td style="font-size:.75rem;color:var(--muted)">${r.top_features.map(featLabel).join(', ')||'—'}</td>
+    </tr>`;
+  }).join('');
+
+  setKpiModal('Anomalies Detected (Isolation Forest)', `${d.total_anomalies.toLocaleString()} of ${d.total_scored.toLocaleString()} invoices flagged (${d.anomaly_rate_pct}%)`,
+    summary + `<div style="overflow-x:auto"><table class="tbl">
+      <thead><tr><th>Invoice</th><th>Customer</th><th>Segment</th><th>Amount</th><th>IF Score ↑ anomalous</th><th>Anomaly Proxy</th><th>Anomalous Features</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`);
+}
+
+// ── Duplicate refunds ─────────────────────────────────────────────────────────
+async function renderKpiDuplicateRefunds() {
+  const d = await fetch('/api/dashboard/kpi/duplicate-refunds/').then(r=>r.json());
+  const summary = `<div class="kpi-summary-box">
+    <div class="ks"><div class="ks-val" style="color:var(--scarlet)">${d.count}</div><div class="ks-lbl">Duplicate Refunds</div></div>
+    <div class="ks"><div class="ks-val" style="color:var(--scarlet)">${usd(d.total_amount)}</div><div class="ks-lbl">Total Duplicated Amount</div></div>
+  </div>
+  <p style="font-size:.82rem;color:var(--muted);margin-bottom:14px;">
+    <strong>What is a duplicate refund?</strong> A refund that appears to have been processed more than once for the same invoice or transaction. Each row below represents a refund that the system flagged (<code>is_duplicate = true</code>) — these represent confirmed revenue leakage where money left the business twice for the same event.
+  </p>`;
+
+  const rows = d.refunds.map(r=>`<tr>
+    <td style="font-family:monospace;font-size:.75rem;">${r.refund_number}</td>
+    <td style="font-weight:500;">${r.customer_name}</td>
+    <td><span class="seg seg-${r.customer_segment}">${r.customer_segment}</span></td>
+    <td style="font-family:monospace;font-size:.75rem;">${r.invoice_number||'—'}</td>
+    <td style="color:var(--scarlet);font-weight:700;">${usd(r.amount)}</td>
+    <td style="font-size:.78rem;color:var(--muted)">${r.reason||'—'}</td>
+    <td><span class="sev sev-${r.status==='approved'?'critical':r.status==='pending'?'high':'medium'}">${r.status}</span></td>
+    <td style="font-size:.75rem;color:var(--muted)">${r.requested_at||'—'}</td>
+    <td style="font-size:.75rem;color:var(--muted)">${r.processed_at||'—'}</td>
+  </tr>`).join('');
+
+  setKpiModal('Duplicate Refunds', `${d.count} duplicates · ${usd(d.total_amount)} total leakage`,
+    summary + `<div style="overflow-x:auto"><table class="tbl">
+      <thead><tr><th>Refund #</th><th>Customer</th><th>Segment</th><th>Invoice</th><th>Amount</th><th>Reason</th><th>Status</th><th>Requested</th><th>Processed</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// INVOICE DETAIL MODAL (row click in top-risks table)
+// ══════════════════════════════════════════════════════════════════════════════
+const invoiceModal = new bootstrap.Modal(document.getElementById('invoiceModal'));
+
+async function openInvoiceModal(invoiceId) {
+  document.getElementById('invModalTitle').textContent    = 'Loading…';
+  document.getElementById('invModalSubtitle').textContent = '';
+  document.getElementById('invModalBody').innerHTML       = spinnerHtml;
+  invoiceModal.show();
+
+  let d;
+  try { d = await fetch(`/api/dashboard/invoice/${invoiceId}/`).then(r=>r.json()); }
+  catch(e) {
+    document.getElementById('invModalBody').innerHTML =
+      '<div class="text-center py-4 text-danger">Failed to load invoice data.</div>';
+    return;
+  }
+
+  const { invoice:inv, customer, risk, anomaly, rule_alerts } = d;
+  document.getElementById('invModalTitle').textContent = inv.invoice_number;
+  document.getElementById('invModalSubtitle').innerHTML =
+    `<span class="sev sev-${risk?.risk_severity||'low'}">${(risk?.risk_severity||'unknown').toUpperCase()}</span>
+     &nbsp;${customer.name} &nbsp;·&nbsp; ${customer.segment}`;
+
+  const invStatus = `<span style="font-size:.78rem;font-weight:700;color:${
+    inv.status==='paid'?'#16a34a':inv.status==='overdue'?'#AE0001':'#D4A017'}">${inv.status.toUpperCase()}</span>`;
+  const discRatio = inv.total_amount>0 ? ((inv.discount_amount/inv.total_amount)*100).toFixed(1)+'%' : '—';
+
+  const invSection = `<div class="detail-section">
+    <div class="detail-section-title"><i class="bi bi-receipt me-1"></i>Invoice Information</div>
+    <div class="detail-grid">
+      <div class="detail-kv"><div class="dk">Status</div><div class="dv">${invStatus}</div></div>
+      <div class="detail-kv"><div class="dk">Issue Date</div><div class="dv">${inv.issue_date}</div></div>
+      <div class="detail-kv"><div class="dk">Due Date</div><div class="dv">${inv.due_date}</div></div>
+      <div class="detail-kv"><div class="dk">Total Billed</div><div class="dv">${usd(inv.total_amount)}</div></div>
+      <div class="detail-kv"><div class="dk">Paid</div><div class="dv" style="color:#16a34a">${usd(inv.paid_amount)}</div></div>
+      <div class="detail-kv"><div class="dk">Outstanding</div><div class="dv" style="color:${inv.outstanding_amount>0?'#AE0001':'#16a34a'}">${usd(inv.outstanding_amount)}</div></div>
+      <div class="detail-kv"><div class="dk">Discount Applied</div><div class="dv">${usd(inv.discount_amount)} <span style="color:var(--muted);font-size:.75rem;">(${discRatio})</span></div></div>
+      <div class="detail-kv"><div class="dk">Customer Status</div><div class="dv">${customer.status}</div></div>
+    </div>
+  </div>`;
+
+  let mlSection = '';
+  if(risk) {
+    const fs = risk.feature_snapshot||{};
+    mlSection = `<div class="detail-section">
+      <div class="detail-section-title"><i class="bi bi-cpu me-1"></i>ML Risk Analysis</div>
+      <div class="model-score"><span class="ms-label">XGBoost probability</span>
+        <div class="prob-bar" style="min-width:140px"><div class="prob-track"><div class="prob-fill" style="width:${(fs.xgb_prob||0)*100}%"></div></div>
+        <span class="ms-val">${((fs.xgb_prob||0)*100).toFixed(1)}%</span></div></div>
+      <div class="model-score"><span class="ms-label">Logistic Regression probability</span>
+        <div class="prob-bar" style="min-width:140px"><div class="prob-track"><div class="prob-fill" style="width:${(fs.lr_prob||0)*100}%"></div></div>
+        <span class="ms-val">${((fs.lr_prob||0)*100).toFixed(1)}%</span></div></div>
+      <div class="model-score"><span class="ms-label">Ensemble (70% XGB + 30% LR)</span>
+        <div class="prob-bar" style="min-width:140px"><div class="prob-track"><div class="prob-fill" style="width:${(fs.ensemble_prob||0)*100}%"></div></div>
+        <span class="ms-val" style="color:${sevColor[risk.risk_severity]}">${((fs.ensemble_prob||0)*100).toFixed(1)}%</span></div></div>
+      <div class="model-score"><span class="ms-label">Isolation Forest anomaly</span>
+        <span class="ms-val">${fs.if_anomaly?'<span class="sev sev-high">ANOMALY</span>':'<span class="sev sev-low">NORMAL</span>'}</span></div>
+      <div class="model-score"><span class="ms-label">Risk rank percentile</span>
+        <span class="ms-val">${risk.rank_percentile!=null?risk.rank_percentile.toFixed(1)+' pct':'—'}</span></div>
+      <div style="margin-top:10px;">
+        <div class="dk" style="font-size:.72rem;color:var(--muted);margin-bottom:6px;">Top risk-driving features</div>
+        ${(risk.top_features||[]).map((f,i)=>`<span class="feat-tag">${i+1}. ${featLabel(f)}</span>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  let anomSection = '';
+  if(anomaly) {
+    anomSection = `<div class="detail-section">
+      <div class="detail-section-title"><i class="bi bi-exclamation-diamond me-1"></i>Anomaly Detection</div>
+      <div class="detail-grid">
+        <div class="detail-kv"><div class="dk">Anomaly flag</div><div class="dv">${anomaly.is_anomaly?'<span class="sev sev-high">YES — ANOMALOUS</span>':'<span class="sev sev-low">NO</span>'}</div></div>
+        <div class="detail-kv"><div class="dk">IF Score</div><div class="dv" style="font-family:monospace">${anomaly.score!=null?anomaly.score.toFixed(4):'—'} <span style="color:var(--muted);font-size:.72rem;">(lower = more anomalous)</span></div></div>
+      </div>
+      ${anomaly.top_features&&anomaly.top_features.length?`<div style="margin-top:8px"><div class="dk" style="font-size:.72rem;color:var(--muted);margin-bottom:6px">Anomalous features</div>${anomaly.top_features.map(f=>`<span class="feat-tag">${featLabel(f)}</span>`).join('')}</div>`:''}
+    </div>`;
+  }
+
+  let rulesSection = rule_alerts&&rule_alerts.length ? `
+    <div class="detail-section">
+      <div class="detail-section-title"><i class="bi bi-shield-exclamation me-1"></i>Rule Alerts (${rule_alerts.length})</div>
+      ${rule_alerts.map(a=>`<div class="alert-row">
+        <span class="sev sev-${a.severity}" style="flex-shrink:0;margin-top:1px;">${a.severity}</span>
+        <div style="flex:1">
+          <div style="font-size:.78rem;font-weight:600;font-family:monospace;color:var(--text)">${a.rule_code}</div>
+          <div style="font-size:.78rem;color:var(--muted);margin-top:2px">${a.description}</div>
+          ${parseFloat(a.leakage_amount)>0?`<div style="font-size:.78rem;font-weight:600;color:#AE0001;margin-top:2px">Leakage: ${usd(a.leakage_amount)}</div>`:''}
+        </div>
+        ${a.is_resolved?'<span style="font-size:.7rem;color:#16a34a;font-weight:600">RESOLVED</span>':''}
+      </div>`).join('')}
+    </div>` : `<div class="detail-section">
+      <div class="detail-section-title"><i class="bi bi-shield-check me-1"></i>Rule Alerts</div>
+      <div style="color:var(--muted);font-size:.82rem">No rule-based alerts triggered for this invoice.</div>
+    </div>`;
+
+  document.getElementById('invModalBody').innerHTML = invSection + mlSection + anomSection + rulesSection;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════════════════════════════════════════
+Promise.all([renderKPIs(), renderRevenueChart(), renderDonut(), renderTopRisks(), renderAnomalies()])
+  .then(() => document.getElementById('loader').style.display='none')
+  .catch(e => { console.error(e); document.getElementById('loader').style.display='none'; });
+</script>
+</body>
+</html>

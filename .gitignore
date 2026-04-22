@@ -1,0 +1,69 @@
+# ── Python ───────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── Virtual environment ───────────────────────────────────────────────
+venv/
+env/
+.venv/
+ENV/
+
+# ── Django ────────────────────────────────────────────────────────────
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+staticfiles/
+media/
+
+# ── ML artifacts (large binary files) ────────────────────────────────
+artifacts/models/*.pkl
+artifacts/models/*.joblib
+artifacts/shap/*.npy
+artifacts/shap/*.pkl
+
+# Keep directory structure but not the binaries
+!artifacts/models/.gitkeep
+!artifacts/shap/.gitkeep
+!artifacts/forecasts/.gitkeep
+!artifacts/reports/.gitkeep
+
+# ── Secrets / environment ─────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.secret
+secrets.py
+
+# ── OS files ──────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── IDE ───────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Jupyter ───────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
+
+# ── Test / coverage ───────────────────────────────────────────────────
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+
+# ── Celery ───────────────────────────────────────────────────────────
+celerybeat-schedule
+celerybeat.pid

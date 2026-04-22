@@ -1,0 +1,16 @@
+feature,importance
+billed_vs_expected_ratio,0.41614416
+contract_gap,0.12426842
+avg_days_late,0.118743405
+max_days_late,0.09329377
+tax_amount,0.0486547
+discount_ratio,0.04638039
+sub_discount_pct,0.02714443
+paid_vs_billed_ratio,0.026527645
+total_paid,0.017512664
+failed_payment_count,0.011695152
+duplicate_refund_count,0.011639862
+total_amount,0.011526807
+payment_delay_ratio,0.010830795
+quantity,0.007777656
+outstanding_amount,0.004553984

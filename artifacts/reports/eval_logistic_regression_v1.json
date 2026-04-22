@@ -1,0 +1,52 @@
+{
+  "model_name": "logistic_regression_v1",
+  "threshold_used": 0.5,
+  "optimal_threshold": 0.5252045620904525,
+  "youden_j": 0.713897542970249,
+  "n_samples": 7500,
+  "n_positive": 4928,
+  "leakage_rate_pct": 65.70666666666666,
+  "roc_auc": 0.9089,
+  "pr_auc": 0.9521,
+  "accuracy": 0.8468,
+  "precision": 0.9289,
+  "recall": 0.8304,
+  "f1_score": 0.8769,
+  "confusion_matrix": [
+    [
+      2259,
+      313
+    ],
+    [
+      836,
+      4092
+    ]
+  ],
+  "classification_report": {
+    "0": {
+      "precision": 0.7298869143780291,
+      "recall": 0.8783048211508554,
+      "f1-score": 0.7972472207517205,
+      "support": 2572.0
+    },
+    "1": {
+      "precision": 0.92894438138479,
+      "recall": 0.8303571428571429,
+      "f1-score": 0.8768884603021536,
+      "support": 4928.0
+    },
+    "accuracy": 0.8468,
+    "macro avg": {
+      "precision": 0.8294156478814095,
+      "recall": 0.8543309820039992,
+      "f1-score": 0.8370678405269371,
+      "support": 7500.0
+    },
+    "weighted avg": {
+      "precision": 0.8606809406992715,
+      "recall": 0.8468,
+      "f1-score": 0.8495768245523251,
+      "support": 7500.0
+    }
+  }
+}

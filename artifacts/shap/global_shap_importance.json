@@ -1,0 +1,122 @@
+[
+  {
+    "feature":"billed_vs_expected_ratio",
+    "mean_abs_shap":1.2169063091,
+    "label":"billing-to-contract ratio",
+    "rank":1
+  },
+  {
+    "feature":"contract_gap",
+    "mean_abs_shap":0.3815897703,
+    "label":"contract underbilling gap",
+    "rank":2
+  },
+  {
+    "feature":"max_days_late",
+    "mean_abs_shap":0.1157275513,
+    "label":"maximum payment delay",
+    "rank":3
+  },
+  {
+    "feature":"discount_ratio",
+    "mean_abs_shap":0.1021652073,
+    "label":"discount ratio",
+    "rank":4
+  },
+  {
+    "feature":"avg_days_late",
+    "mean_abs_shap":0.0419262834,
+    "label":"average payment delay",
+    "rank":5
+  },
+  {
+    "feature":"total_amount",
+    "mean_abs_shap":0.0388175473,
+    "label":"invoice total amount",
+    "rank":6
+  },
+  {
+    "feature":"outstanding_amount",
+    "mean_abs_shap":0.0367418304,
+    "label":"outstanding amount",
+    "rank":7
+  },
+  {
+    "feature":"total_paid",
+    "mean_abs_shap":0.0360177532,
+    "label":"total amount paid",
+    "rank":8
+  },
+  {
+    "feature":"tax_amount",
+    "mean_abs_shap":0.0338385627,
+    "label":"tax amount",
+    "rank":9
+  },
+  {
+    "feature":"paid_amount",
+    "mean_abs_shap":0.0200985875,
+    "label":"paid amount",
+    "rank":10
+  },
+  {
+    "feature":"sub_discount_pct",
+    "mean_abs_shap":0.0193441696,
+    "label":"subscription discount %",
+    "rank":11
+  },
+  {
+    "feature":"paid_vs_billed_ratio",
+    "mean_abs_shap":0.0150554003,
+    "label":"paid-to-billed ratio",
+    "rank":12
+  },
+  {
+    "feature":"outstanding_ratio",
+    "mean_abs_shap":0.0149157699,
+    "label":"outstanding balance ratio",
+    "rank":13
+  },
+  {
+    "feature":"duplicate_refund_count",
+    "mean_abs_shap":0.0091387033,
+    "label":"duplicate refund count",
+    "rank":14
+  },
+  {
+    "feature":"payment_delay_ratio",
+    "mean_abs_shap":0.0062839678,
+    "label":"payment delay ratio",
+    "rank":15
+  },
+  {
+    "feature":"quantity",
+    "mean_abs_shap":0.0026007239,
+    "label":"subscription quantity",
+    "rank":16
+  },
+  {
+    "feature":"discount_amount",
+    "mean_abs_shap":0.0014429432,
+    "label":"discount amount",
+    "rank":17
+  },
+  {
+    "feature":"payment_terms_days",
+    "mean_abs_shap":0.0012172448,
+    "label":"payment terms (days)",
+    "rank":18
+  },
+  {
+    "feature":"refund_ratio",
+    "mean_abs_shap":0.0011022674,
+    "label":"refund-to-payment ratio",
+    "rank":19
+  },
+  {
+    "feature":"failed_payment_count",
+    "mean_abs_shap":0.0011017377,
+    "label":"failed payment count",
+    "rank":20
+  }
+]

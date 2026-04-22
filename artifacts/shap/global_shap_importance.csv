@@ -1,0 +1,33 @@
+feature,mean_abs_shap,label,rank
+billed_vs_expected_ratio,1.2169063,billing-to-contract ratio,1
+contract_gap,0.38158977,contract underbilling gap,2
+max_days_late,0.11572755,maximum payment delay,3
+discount_ratio,0.10216521,discount ratio,4
+avg_days_late,0.041926283,average payment delay,5
+total_amount,0.038817547,invoice total amount,6
+outstanding_amount,0.03674183,outstanding amount,7
+total_paid,0.036017753,total amount paid,8
+tax_amount,0.033838563,tax amount,9
+paid_amount,0.020098587,paid amount,10
+sub_discount_pct,0.01934417,subscription discount %,11
+paid_vs_billed_ratio,0.0150554,paid-to-billed ratio,12
+outstanding_ratio,0.01491577,outstanding balance ratio,13
+duplicate_refund_count,0.009138703,duplicate refund count,14
+payment_delay_ratio,0.0062839678,payment delay ratio,15
+quantity,0.0026007239,subscription quantity,16
+discount_amount,0.0014429432,discount amount,17
+payment_terms_days,0.0012172448,payment terms (days),18
+refund_ratio,0.0011022674,refund-to-payment ratio,19
+failed_payment_count,0.0011017377,failed payment count,20
+payment_count,0.000911964,payment count,21
+mrr_log,7.839808e-05,MRR (log scale),22
+total_attempts,0.0,total payment attempts,23
+refund_count,0.0,refund count,24
+mrr,0.0,monthly recurring revenue,25
+refund_amount,0.0,total refund amount,26
+failed_payment_rate,0.0,failed payment rate,27
+overdue_days,0.0,days overdue,28
+retry_rate,0.0,payment retry rate,29
+is_annual_billing,0.0,annual billing flag,30
+issue_month,0.0,invoice month,31
+issue_quarter,0.0,invoice quarter,32

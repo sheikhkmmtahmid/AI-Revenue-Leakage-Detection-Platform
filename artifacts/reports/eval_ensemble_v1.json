@@ -1,0 +1,52 @@
+{
+  "model_name": "ensemble_v1",
+  "threshold_used": 0.5,
+  "optimal_threshold": 0.5345600094662711,
+  "youden_j": 0.9958238447011775,
+  "n_samples": 7500,
+  "n_positive": 4928,
+  "leakage_rate_pct": 65.70666666666666,
+  "roc_auc": 0.9997,
+  "pr_auc": 0.9997,
+  "accuracy": 0.9979,
+  "precision": 0.9982,
+  "recall": 0.9986,
+  "f1_score": 0.9984,
+  "confusion_matrix": [
+    [
+      2563,
+      9
+    ],
+    [
+      7,
+      4921
+    ]
+  ],
+  "classification_report": {
+    "0": {
+      "precision": 0.9972762645914397,
+      "recall": 0.9965007776049767,
+      "f1-score": 0.9968883702839362,
+      "support": 2572.0
+    },
+    "1": {
+      "precision": 0.9981744421906694,
+      "recall": 0.9985795454545454,
+      "f1-score": 0.9983769527287483,
+      "support": 4928.0
+    },
+    "accuracy": 0.9978666666666667,
+    "macro avg": {
+      "precision": 0.9977253533910546,
+      "recall": 0.997540161529761,
+      "f1-score": 0.9976326615063422,
+      "support": 7500.0
+    },
+    "weighted avg": {
+      "precision": 0.9978664271526403,
+      "recall": 0.9978666666666667,
+      "f1-score": 0.9978664681890074,
+      "support": 7500.0
+    }
+  }
+}
