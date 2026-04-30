@@ -1,3 +1,12 @@
+---
+title: AI Revenue Leakage Detection Platform
+emoji: 💰
+colorFrom: red
+colorTo: yellow
+sdk: docker
+pinned: false
+---
+
 # AI Revenue Leakage Detection Platform
 
 A production-grade Django + MySQL SaaS application that detects revenue leakage through three complementary approaches: **rule-based reconciliation**, **ML anomaly detection** (Isolation Forest + XGBoost ensemble), and **time-series forecasting** (Prophet/SARIMA). Includes a full-featured interactive dashboard.
