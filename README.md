@@ -11,6 +11,8 @@ pinned: false
 
 A production-grade Django + MySQL SaaS application that detects revenue leakage through three complementary approaches: **rule-based reconciliation**, **ML anomaly detection** (Isolation Forest + XGBoost ensemble), and **time-series forecasting** (Prophet/SARIMA). Includes a full-featured interactive dashboard.
 
+Built by [SKMMT](https://skmmt.rootexception.com/)
+View [Demo](https://sheikhkmmtahmid-ai-revenue-leakage-detection-platform.hf.space/)
 ---
 
 ## What This Project Does
